@@ -1,4 +1,4 @@
-# Fake News Detector (AI Powered)
+# Fake News Detector
 
 An AI-based Fake News Detection web app built with **Next.js 14** and **Tailwind CSS**.  
 This application analyzes news articles in real time to help identify potential misinformation using AI-powered insights.
@@ -16,8 +16,6 @@ This application analyzes news articles in real time to help identify potential 
 - **Framework:** Next.js 14
 - **Language:** JavaScript (React)
 - **Styling:** Tailwind CSS
-- **Database:** MongoDB (via Mongoose)
-- **AI Integration:** OpenAI
 
 ## Installation & Setup
 
