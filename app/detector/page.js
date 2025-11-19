@@ -84,7 +84,7 @@ export default function Detector() {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Headline (Optional)
+                Headline
               </label>
               <input
                 type="text"
@@ -97,7 +97,7 @@ export default function Detector() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Article Text (Optional)
+                Article Text
               </label>
               <textarea
                 value={articleText}
