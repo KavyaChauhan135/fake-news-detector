@@ -99,10 +99,15 @@ export default function Detector() {
       </nav>
 
       <main className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-6 animate-fade-in">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            Fake News Detector
-          </h2>
+        <div className="bg-white rounded-lg shadow-lg p-8 animate-fade-in">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Fake News Detector
+            </h2>
+            <p className="text-gray-600">
+              Analyze news articles and headlines with AI-powered detection
+            </p>
+          </div>
 
           <div className="space-y-6">
             <div>
@@ -114,28 +119,28 @@ export default function Detector() {
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="Enter news headline..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Article Text
+                Article Text <span className="text-gray-400 font-normal">(Optional)</span>
               </label>
               <textarea
                 value={articleText}
                 onChange={(e) => setArticleText(e.target.value)}
-                placeholder="Paste article text here..."
+                placeholder="Paste article text here for more detailed analysis..."
                 rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow resize-none"
               />
             </div>
 
-            <div className="text-center">
+            <div className="text-center pt-2">
               <button
                 onClick={detectFakeNews}
                 disabled={loading}
-                className="bg-indigo-600 text-white px-8 py-3 rounded-md font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-indigo-600 text-white px-10 py-3 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg"
               >
                 {loading ? "Analyzing..." : "Detect Fake News"}
               </button>
@@ -191,7 +196,7 @@ export default function Detector() {
               <div className="mb-4">
                 <span className="text-lg font-semibold">Confidence: </span>
                 <span className={result.color}>
-                  {result.confidence.toFixed(1)}%
+                  {Number.isInteger(result.confidence) ? result.confidence : result.confidence.toFixed(1)}%
                 </span>
               </div>
               <div>
