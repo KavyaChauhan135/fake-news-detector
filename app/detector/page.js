@@ -9,10 +9,11 @@ export default function Detector() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showEmptyModal, setShowEmptyModal] = useState(false);
 
   const detectFakeNews = async () => {
     if (!articleText.trim() && !headline.trim()) {
-      alert("Please enter either a headline or article text");
+      setShowEmptyModal(true);
       return;
     }
 
@@ -213,6 +214,30 @@ export default function Detector() {
           )}
         </div>
       </main>
+
+      {/* Empty Input Modal */}
+      {showEmptyModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/30">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 border border-gray-200">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Input Required
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Please enter either a headline or article text to analyze.
+              </p>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowEmptyModal(false)}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 focus:outline-none transition-colors"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
