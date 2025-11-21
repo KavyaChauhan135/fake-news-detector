@@ -11,6 +11,7 @@ export default function Dashboard() {
     real: 0,
     uncertain: 0
   })
+  const [showClearModal, setShowClearModal] = useState(false)
 
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem('detectionHistory') || '[]')
@@ -48,11 +49,14 @@ export default function Dashboard() {
   }
 
   const clearHistory = () => {
-    if (confirm('Are you sure you want to clear all detection history?')) {
-      localStorage.removeItem('detectionHistory')
-      setDetectionHistory([])
-      setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })
-    }
+    setShowClearModal(true)
+  }
+
+  const confirmClearHistory = () => {
+    localStorage.removeItem('detectionHistory')
+    setDetectionHistory([])
+    setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })
+    setShowClearModal(false)
   }
 
   const getVerdictColor = (verdict) => {
@@ -215,6 +219,36 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {/* Confirmation Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/30">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 border border-gray-200">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Clear All History?
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to clear all detection history? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowClearModal(false)}
+                  className="px-4 py-2 text-gray-700 rounded-md font-medium hover:bg-gray-100 focus:outline-none transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmClearHistory}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
