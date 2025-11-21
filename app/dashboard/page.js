@@ -14,10 +14,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     const history = JSON.parse(localStorage.getItem('detectionHistory') || '[]')
-    setDetectionHistory(history)
+    // Filter out invalid items
+    const validHistory = history.filter(item => item && item.result && item.result.verdict)
+    setDetectionHistory(validHistory)
     
     // Calculate statistics
-    const stats = history.reduce((acc, item) => {
+    const stats = validHistory.reduce((acc, item) => {
       acc.total++
       if (item.result.verdict === 'Likely Fake') acc.fake++
       else if (item.result.verdict === 'Likely Real') acc.real++
@@ -27,6 +29,23 @@ export default function Dashboard() {
     
     setStatistics(stats)
   }, [])
+
+  const deleteItem = (itemId) => {
+    const updatedHistory = detectionHistory.filter(item => item.id !== itemId)
+    setDetectionHistory(updatedHistory)
+    localStorage.setItem('detectionHistory', JSON.stringify(updatedHistory))
+    
+    // Recalculate statistics
+    const stats = updatedHistory.reduce((acc, item) => {
+      acc.total++
+      if (item.result.verdict === 'Likely Fake') acc.fake++
+      else if (item.result.verdict === 'Likely Real') acc.real++
+      else if (item.result.verdict === 'Uncertain') acc.uncertain++
+      return acc
+    }, { total: 0, fake: 0, real: 0, uncertain: 0 })
+    
+    setStatistics(stats)
+  }
 
   const clearHistory = () => {
     if (confirm('Are you sure you want to clear all detection history?')) {
@@ -51,7 +70,9 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-indigo-600">FakeNewsDetector</h1>
+              <Link href="/">
+                <h1 className="text-2xl font-bold text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors">FakeNewsDetector</h1>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
@@ -162,22 +183,33 @@ export default function Dashboard() {
           ) : (
             <div className="divide-y divide-gray-200">
               {detectionHistory.map((item) => (
-                <div key={item.id} className="p-6 hover:bg-gray-50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">
-                        {item.headline}
-                      </h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerdictColor(item.result.verdict)}`}>
-                          {item.result.verdict}
-                        </span>
-                        <span>Confidence: {item.result.confidence.toFixed(1)}%</span>
-                        <span>{new Date(item.timestamp).toLocaleString()}</span>
+                item?.result ? (
+                  <div key={item.id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-900 mb-1 truncate">
+                          {item.headline}
+                        </h4>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 flex-wrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerdictColor(item.result.verdict)}`}>
+                            {item.result.verdict}
+                          </span>
+                          <span>Confidence: {typeof item.result.confidence === 'number' ? item.result.confidence.toFixed(1) : item.result.confidence}%</span>
+                          <span>{new Date(item.timestamp).toLocaleString()}</span>
+                        </div>
                       </div>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete this item"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
-                </div>
+                ) : null
               ))}
             </div>
           )}

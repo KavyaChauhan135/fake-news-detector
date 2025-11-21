@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { analyzeContent } from "../utils/aiAnalysis.js";
 
 export default function Detector() {
   const [articleText, setArticleText] = useState("");
   const [headline, setHeadline] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const detectFakeNews = async () => {
     if (!articleText.trim() && !headline.trim()) {
@@ -17,12 +17,28 @@ export default function Detector() {
     }
 
     setLoading(true);
+    setError(null);
+    setResult(null);
 
-    setTimeout(() => {
-      const contentToAnalyze = headline || articleText;
-      const analysis = analyzeContent(contentToAnalyze);
+    try {
+      const response = await fetch("/api/detect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: articleText,
+          headline: headline,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to analyze content");
+      }
+
+      const analysis = await response.json();
       setResult(analysis);
-      setLoading(false);
 
       // Store result in localStorage for dashboard
       const history = JSON.parse(
@@ -38,7 +54,12 @@ export default function Detector() {
         "detectionHistory",
         JSON.stringify(history.slice(0, 50))
       );
-    }, 2000);
+    } catch (err) {
+      console.error("Error detecting fake news:", err);
+      setError(err.message || "Failed to analyze content. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,9 +68,11 @@ export default function Detector() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-indigo-600">
-                FakeNewsDetector
-              </h1>
+              <Link href="/">
+                <h1 className="text-2xl font-bold text-indigo-600 cursor-pointer hover:text-indigo-700 transition-colors">
+                  FakeNewsDetector
+                </h1>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <Link
@@ -121,15 +144,36 @@ export default function Detector() {
 
           {loading && (
             <div className="mt-8 text-center animate-fade-in">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-              <p className="mt-2 text-gray-600 animate-pulse">
-                AI is analyzing the content...
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                <p>• Analyzing language patterns...</p>
-                <p>• Checking for sensational content...</p>
-                <p>• Evaluating credibility indicators...</p>
+              <div className="flex justify-center mb-4">
+                <div className="relative">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200"></div>
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-600 border-t-transparent absolute top-0 left-0"></div>
+                </div>
               </div>
+              <p className="mt-4 text-lg font-semibold text-gray-800">
+                Analyzing with AI...
+              </p>
+              <div className="mt-6 space-y-3 text-sm text-gray-600">
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce"></div>
+                  <p>Examining content authenticity</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2" style={{animationDelay: '0.2s'}}>
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  <p>Detecting bias and manipulation</p>
+                </div>
+                <div className="flex items-center justify-center space-x-2" style={{animationDelay: '0.4s'}}>
+                  <div className="w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                  <p>Verifying source credibility</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-8 p-6 rounded-lg border-2 border-red-200 bg-red-50 animate-fade-in">
+              <h3 className="text-xl font-bold text-red-600 mb-2">Error</h3>
+              <p className="text-gray-700">{error}</p>
             </div>
           )}
 
