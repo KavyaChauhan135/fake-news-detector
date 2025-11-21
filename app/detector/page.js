@@ -6,13 +6,14 @@ import Link from "next/link";
 export default function Detector() {
   const [articleText, setArticleText] = useState("");
   const [headline, setHeadline] = useState("");
+  const [url, setUrl] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showEmptyModal, setShowEmptyModal] = useState(false);
 
   const detectFakeNews = async () => {
-    if (!articleText.trim() && !headline.trim()) {
+    if (!articleText.trim() && !headline.trim() && !url.trim()) {
       setShowEmptyModal(true);
       return;
     }
@@ -30,6 +31,7 @@ export default function Detector() {
         body: JSON.stringify({
           text: articleText,
           headline: headline,
+          url: url,
         }),
       });
 
@@ -111,6 +113,29 @@ export default function Detector() {
           </div>
 
           <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                News URL <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com/news-article"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+              />
+              <p className="mt-1 text-xs text-gray-500">Enter a URL to automatically fetch and analyze the article</p>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">OR</span>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Headline
@@ -224,7 +249,7 @@ export default function Detector() {
                 Input Required
               </h3>
               <p className="text-sm text-gray-600 mb-6">
-                Please enter either a headline or article text to analyze.
+                Please enter a URL, headline, or article text to analyze.
               </p>
               <div className="flex justify-end">
                 <button

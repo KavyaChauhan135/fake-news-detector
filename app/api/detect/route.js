@@ -1,15 +1,51 @@
 export async function POST(request) {
   try {
-    const { text, headline } = await request.json();
+    const { text, headline, url } = await request.json();
 
-    if (!text && !headline) {
+    if (!text && !headline && !url) {
       return Response.json(
-        { error: "Please provide text or headline" },
+        { error: "Please provide URL, text, or headline" },
         { status: 400 }
       );
     }
 
-    const contentToAnalyze = headline || text;
+    let contentToAnalyze = headline || text;
+
+    // If URL is provided, fetch the content
+    if (url) {
+      try {
+        const urlResponse = await fetch(url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        });
+        
+        if (!urlResponse.ok) {
+          return Response.json(
+            { error: "Failed to fetch content from URL" },
+            { status: 400 }
+          );
+        }
+
+        const html = await urlResponse.text();
+        
+        // Extract text content from HTML (basic extraction)
+        const textContent = html
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        contentToAnalyze = textContent.substring(0, 3000); // Limit to first 3000 chars
+      } catch (urlError) {
+        console.error("Error fetching URL:", urlError);
+        return Response.json(
+          { error: "Failed to fetch or parse URL content" },
+          { status: 400 }
+        );
+      }
+    }
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
