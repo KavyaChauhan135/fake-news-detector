@@ -1,35 +1,29 @@
-// This tells Next.js this is a client-side component (runs in browser)
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 
 export default function Detector() {
-  // State variables to store user input and results
-  const [articleText, setArticleText] = useState("");  // Stores article text
-  const [headline, setHeadline] = useState("");        // Stores headline
-  const [url, setUrl] = useState("");                  // Stores URL
-  const [result, setResult] = useState(null);          // Stores analysis result
-  const [loading, setLoading] = useState(false);       // Shows loading spinner
-  const [error, setError] = useState(null);            // Stores error messages
-  const [showEmptyModal, setShowEmptyModal] = useState(false);  // Shows/hides empty input modal
-  const [activeTab, setActiveTab] = useState("url");   // Which tab is active: "url" or "manual"
+  const [articleText, setArticleText] = useState("");
+  const [headline, setHeadline] = useState("");
+  const [url, setUrl] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showEmptyModal, setShowEmptyModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("url");
 
-  // Function that runs when user clicks "Detect Fake News" button
   const detectFakeNews = async () => {
-    // Check if user entered something
     if (!articleText.trim() && !headline.trim() && !url.trim()) {
-      setShowEmptyModal(true);  // Show modal asking for input
+      setShowEmptyModal(true);
       return;
     }
 
-    // Show loading spinner and clear previous results
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      // Send data to our API for analysis
       const response = await fetch("/api/detect", {
         method: "POST",
         headers: {
@@ -42,37 +36,31 @@ export default function Detector() {
         }),
       });
 
-      // Check if API request was successful
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to analyze content");
       }
 
-      // Get the analysis result from API
       const analysis = await response.json();
-      setResult(analysis);  // Display the result
+      setResult(analysis);
 
-      // Save result to browser's localStorage so it shows on dashboard
       const history = JSON.parse(
         localStorage.getItem("detectionHistory") || "[]"
       );
       history.unshift({
-        id: Date.now(),  // Unique ID using timestamp
+        id: Date.now(),
         headline: headline || articleText.substring(0, 100) + "...",
         result: analysis,
         timestamp: new Date().toISOString(),
       });
-      // Keep only last 50 results
       localStorage.setItem(
         "detectionHistory",
         JSON.stringify(history.slice(0, 50))
       );
     } catch (err) {
-      // If something goes wrong, show error message
       console.error("Error detecting fake news:", err);
       setError(err.message || "Failed to analyze content. Please try again.");
     } finally {
-      // Hide loading spinner
       setLoading(false);
     }
   };
@@ -124,7 +112,6 @@ export default function Detector() {
             </p>
           </div>
 
-          {/* Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
             <button
               onClick={() => setActiveTab("url")}
@@ -273,7 +260,6 @@ export default function Detector() {
         </div>
       </main>
 
-      {/* Empty Input Modal */}
       {showEmptyModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/30">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 border border-gray-200">

@@ -1,36 +1,25 @@
-// This tells Next.js this is a client-side component
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function Dashboard() {
-  // State to store the list of past detections
   const [detectionHistory, setDetectionHistory] = useState([])
-  
-  // State to store statistics (total, fake, real, uncertain counts)
   const [statistics, setStatistics] = useState({
     total: 0,
     fake: 0,
     real: 0,
     uncertain: 0
   })
-  
-  // State to show/hide the "Clear All" confirmation modal
   const [showClearModal, setShowClearModal] = useState(false)
 
-  // This runs once when the page loads
   useEffect(() => {
-    // Get detection history from browser's localStorage
     const history = JSON.parse(localStorage.getItem('detectionHistory') || '[]')
-    
-    // Remove any broken/invalid items
     const validHistory = history.filter(item => item && item.result && item.result.verdict)
     setDetectionHistory(validHistory)
     
-    // Count how many fake, real, and uncertain results we have
     const stats = validHistory.reduce((acc, item) => {
-      acc.total++  // Count total items
+      acc.total++
       if (item.result.verdict === 'Likely Fake') acc.fake++
       else if (item.result.verdict === 'Likely Real') acc.real++
       else if (item.result.verdict === 'Uncertain') acc.uncertain++
@@ -38,18 +27,13 @@ export default function Dashboard() {
     }, { total: 0, fake: 0, real: 0, uncertain: 0 })
     
     setStatistics(stats)
-  }, [])  // Empty array means this only runs once
+  }, [])
 
-  // Function to delete a single item from history
   const deleteItem = (itemId) => {
-    // Remove the item with matching ID
     const updatedHistory = detectionHistory.filter(item => item.id !== itemId)
     setDetectionHistory(updatedHistory)
-    
-    // Save updated history to localStorage
     localStorage.setItem('detectionHistory', JSON.stringify(updatedHistory))
     
-    // Recalculate statistics after deletion
     const stats = updatedHistory.reduce((acc, item) => {
       acc.total++
       if (item.result.verdict === 'Likely Fake') acc.fake++
@@ -61,17 +45,15 @@ export default function Dashboard() {
     setStatistics(stats)
   }
 
-  // Function to show the "Clear All" confirmation modal
   const clearHistory = () => {
     setShowClearModal(true)
   }
 
-  // Function to actually clear all history (after user confirms)
   const confirmClearHistory = () => {
-    localStorage.removeItem('detectionHistory')  // Delete from localStorage
-    setDetectionHistory([])  // Clear the list
-    setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })  // Reset stats
-    setShowClearModal(false)  // Close the modal
+    localStorage.removeItem('detectionHistory')
+    setDetectionHistory([])
+    setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })
+    setShowClearModal(false)
   }
 
   const getVerdictColor = (verdict) => {
@@ -114,7 +96,6 @@ export default function Dashboard() {
           <p className="text-gray-600">Track your fake news detection history and analytics</p>
         </div>
 
-        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade-in" style={{animationDelay: '0.1s'}}>
           <div className="bg-white p-6 rounded-lg shadow-md hover-lift">
             <div className="flex items-center">
@@ -173,7 +154,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Detection History */}
         <div className="bg-white rounded-lg shadow-md animate-fade-in" style={{animationDelay: '0.2s'}}>
           <div className="p-6 border-b border-gray-200">
             <div className="flex justify-between items-center">
@@ -235,7 +215,6 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Confirmation Modal */}
       {showClearModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm bg-white/30">
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full mx-4 border border-gray-200">
