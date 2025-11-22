@@ -11,6 +11,7 @@ export default function Detector() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showEmptyModal, setShowEmptyModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("url"); // "url" or "manual"
 
   const detectFakeNews = async () => {
     if (!articleText.trim() && !headline.trim() && !url.trim()) {
@@ -112,55 +113,76 @@ export default function Detector() {
             </p>
           </div>
 
+          {/* Tabs */}
+          <div className="flex border-b border-gray-200 mb-6">
+            <button
+              onClick={() => setActiveTab("url")}
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "url"
+                  ? "border-b-2 border-indigo-600 text-indigo-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Analyze by URL
+            </button>
+            <button
+              onClick={() => setActiveTab("manual")}
+              className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
+                activeTab === "manual"
+                  ? "border-b-2 border-indigo-600 text-indigo-600"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Manual Input
+            </button>
+          </div>
+
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                News URL <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/news-article"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
-              />
-              <p className="mt-1 text-xs text-gray-500">Enter a URL to automatically fetch and analyze the article</p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+            {activeTab === "url" ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  News Article URL
+                </label>
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com/news-article"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Paste a URL to automatically fetch and analyze the article content
+                </p>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">OR</span>
-              </div>
-            </div>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={headline}
+                    onChange={(e) => setHeadline(e.target.value)}
+                    placeholder="Enter news headline..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Headline
-              </label>
-              <input
-                type="text"
-                value={headline}
-                onChange={(e) => setHeadline(e.target.value)}
-                placeholder="Enter news headline..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Article Text <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
-              <textarea
-                value={articleText}
-                onChange={(e) => setArticleText(e.target.value)}
-                placeholder="Paste article text here for more detailed analysis..."
-                rows={8}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow resize-none"
-              />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Article Text <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <textarea
+                    value={articleText}
+                    onChange={(e) => setArticleText(e.target.value)}
+                    placeholder="Paste article text here for more detailed analysis..."
+                    rows={8}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow resize-none"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="text-center pt-2">
               <button
