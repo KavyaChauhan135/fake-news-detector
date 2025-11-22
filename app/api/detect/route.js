@@ -1,7 +1,13 @@
+// Import cheerio for easy HTML parsing (no complex regex needed)
+import * as cheerio from 'cheerio';
+
+// This API endpoint handles fake news detection requests
 export async function POST(request) {
   try {
+    // Step 1: Get the data sent from the frontend (URL, headline, or article text)
     const { text, headline, url } = await request.json();
 
+    // Step 2: Check if user provided at least one input
     if (!text && !headline && !url) {
       return Response.json(
         { error: "Please provide URL, text, or headline" },
@@ -9,21 +15,32 @@ export async function POST(request) {
       );
     }
 
+    // Step 3: Start with headline or text if provided
     let contentToAnalyze = headline || text;
 
-    // If URL is provided, fetch the content
+    // Step 4: If user provided a URL, fetch the article from that URL
     if (url) {
       try {
-        // Extract domain for credibility check
+        // Step 4a: Extract the domain name (e.g., "bbc.com" from "https://bbc.com/article")
         const urlObj = new URL(url);
         const domain = urlObj.hostname;
 
+        // Step 4b: Fetch the webpage HTML with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         const urlResponse = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-          }
+            // Pretend to be a browser so websites don't block us
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        
+        // Check if the fetch was successful
         if (!urlResponse.ok) {
           return Response.json(
             { error: "Failed to fetch content from URL" },
@@ -31,39 +48,54 @@ export async function POST(request) {
           );
         }
 
+        // Step 4c: Get the HTML content as text
         const html = await urlResponse.text();
         
-        // Extract title
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        const title = titleMatch ? titleMatch[1].trim() : '';
-
-        // Extract meta description
-        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
-        const description = descMatch ? descMatch[1].trim() : '';
-
-        // Better content extraction - focus on article/main content
-        let textContent = html
-          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-          .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
-          .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
-          .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
+        // Step 4d: Use cheerio to parse HTML (easier than regex)
+        const $ = cheerio.load(html);
         
-        // Combine title, description, and content
+        // Step 4e: Extract the page title (what shows in browser tab)
+        const title = $('title').text().trim();
+
+        // Step 4f: Extract the meta description (summary of the article)
+        const description = $('meta[name="description"]').attr('content') || '';
+
+        // Step 4g: Remove unwanted elements (scripts, styles, nav, header, footer)
+        $('script').remove();
+        $('style').remove();
+        $('nav').remove();
+        $('header').remove();
+        $('footer').remove();
+        
+        // Step 4h: Get just the text content (no HTML tags)
+        const textContent = $('body').text()
+          .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+          .trim();               // Remove leading/trailing spaces
+        
+        // Step 4i: Combine everything into one text for analysis
         contentToAnalyze = `Source: ${domain}\nTitle: ${title}\n\n${description}\n\n${textContent.substring(0, 2500)}`;
       } catch (urlError) {
         console.error("Error fetching URL:", urlError);
+        
+        // Provide specific error messages
+        let errorMessage = "Failed to fetch or parse URL content";
+        if (urlError.name === 'AbortError') {
+          errorMessage = "Request timeout - the website took too long to respond";
+        } else if (urlError.message.includes('Invalid URL')) {
+          errorMessage = "Invalid URL format";
+        }
+        
         return Response.json(
-          { error: "Failed to fetch or parse URL content" },
+          { error: errorMessage },
           { status: 400 }
         );
       }
     }
+    
+    // Step 5: Get the OpenAI API key from environment variables
     const apiKey = process.env.OPENAI_API_KEY;
 
+    // Check if API key exists
     if (!apiKey) {
       return Response.json(
         { error: "API key not configured" },
@@ -71,6 +103,7 @@ export async function POST(request) {
       );
     }
 
+    // Step 6: Send the content to OpenAI for analysis
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -78,7 +111,7 @@ export async function POST(request) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-4o-mini", // Use GPT-4o-mini model (fast and cost-effective)
         messages: [
           {
             role: "system",
@@ -123,11 +156,12 @@ Only use "Uncertain" when the content is genuinely ambiguous or needs more conte
             content: contentToAnalyze,
           },
         ],
-        temperature: 0.3,
-        max_tokens: 500,
+        temperature: 0.3,  // Lower temperature = more focused and consistent responses
+        max_tokens: 500,   // Limit response length
       }),
     });
 
+    // Step 7: Check if OpenAI request was successful
     if (!response.ok) {
       let error;
       try {
@@ -142,9 +176,11 @@ Only use "Uncertain" when the content is genuinely ambiguous or needs more conte
       );
     }
 
+    // Step 8: Get the AI's response
     const data = await response.json();
     const analysisText = data.choices[0].message.content.trim();
     
+    // Step 9: Parse the AI's JSON response
     let analysis;
     try {
       analysis = JSON.parse(analysisText);
@@ -156,6 +192,7 @@ Only use "Uncertain" when the content is genuinely ambiguous or needs more conte
       );
     }
 
+    // Step 10: Add colors based on the verdict (Fake = red, Real = green, Uncertain = yellow)
     const verdictColors = {
       "Likely Fake": {
         color: "text-red-600",
@@ -176,11 +213,13 @@ Only use "Uncertain" when the content is genuinely ambiguous or needs more conte
 
     const colors = verdictColors[analysis.verdict] || verdictColors["Uncertain"];
 
+    // Step 11: Send the final result back to the frontend
     return Response.json({
-      ...analysis,
-      ...colors,
+      ...analysis,  // verdict, confidence, reasons
+      ...colors,    // color, bgColor, borderColor
     });
   } catch (error) {
+    // If anything goes wrong, return an error
     console.error("Error in detect API:", error);
     return Response.json(
       { error: "Internal server error" },

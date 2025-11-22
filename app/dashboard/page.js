@@ -1,27 +1,36 @@
+// This tells Next.js this is a client-side component
 'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function Dashboard() {
+  // State to store the list of past detections
   const [detectionHistory, setDetectionHistory] = useState([])
+  
+  // State to store statistics (total, fake, real, uncertain counts)
   const [statistics, setStatistics] = useState({
     total: 0,
     fake: 0,
     real: 0,
     uncertain: 0
   })
+  
+  // State to show/hide the "Clear All" confirmation modal
   const [showClearModal, setShowClearModal] = useState(false)
 
+  // This runs once when the page loads
   useEffect(() => {
+    // Get detection history from browser's localStorage
     const history = JSON.parse(localStorage.getItem('detectionHistory') || '[]')
-    // Filter out invalid items
+    
+    // Remove any broken/invalid items
     const validHistory = history.filter(item => item && item.result && item.result.verdict)
     setDetectionHistory(validHistory)
     
-    // Calculate statistics
+    // Count how many fake, real, and uncertain results we have
     const stats = validHistory.reduce((acc, item) => {
-      acc.total++
+      acc.total++  // Count total items
       if (item.result.verdict === 'Likely Fake') acc.fake++
       else if (item.result.verdict === 'Likely Real') acc.real++
       else if (item.result.verdict === 'Uncertain') acc.uncertain++
@@ -29,14 +38,18 @@ export default function Dashboard() {
     }, { total: 0, fake: 0, real: 0, uncertain: 0 })
     
     setStatistics(stats)
-  }, [])
+  }, [])  // Empty array means this only runs once
 
+  // Function to delete a single item from history
   const deleteItem = (itemId) => {
+    // Remove the item with matching ID
     const updatedHistory = detectionHistory.filter(item => item.id !== itemId)
     setDetectionHistory(updatedHistory)
+    
+    // Save updated history to localStorage
     localStorage.setItem('detectionHistory', JSON.stringify(updatedHistory))
     
-    // Recalculate statistics
+    // Recalculate statistics after deletion
     const stats = updatedHistory.reduce((acc, item) => {
       acc.total++
       if (item.result.verdict === 'Likely Fake') acc.fake++
@@ -48,15 +61,17 @@ export default function Dashboard() {
     setStatistics(stats)
   }
 
+  // Function to show the "Clear All" confirmation modal
   const clearHistory = () => {
     setShowClearModal(true)
   }
 
+  // Function to actually clear all history (after user confirms)
   const confirmClearHistory = () => {
-    localStorage.removeItem('detectionHistory')
-    setDetectionHistory([])
-    setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })
-    setShowClearModal(false)
+    localStorage.removeItem('detectionHistory')  // Delete from localStorage
+    setDetectionHistory([])  // Clear the list
+    setStatistics({ total: 0, fake: 0, real: 0, uncertain: 0 })  // Reset stats
+    setShowClearModal(false)  // Close the modal
   }
 
   const getVerdictColor = (verdict) => {
