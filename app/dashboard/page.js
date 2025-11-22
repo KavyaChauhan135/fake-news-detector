@@ -84,7 +84,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-amber-50">
       <nav className="bg-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -100,7 +100,7 @@ export default function Dashboard() {
               <Link href="/detector" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
                 Detector
               </Link>
-              <Link href="/dashboard" className="text-indigo-600 px-3 py-2 rounded-md text-sm font-medium font-semibold">
+              <Link href="/dashboard" className="text-indigo-600 px-3 py-2 rounded-md text-sm font-semibold">
                 Dashboard
               </Link>
             </div>
@@ -219,7 +219,7 @@ export default function Dashboard() {
                       </div>
                       <button
                         onClick={() => deleteItem(item.id)}
-                        className="flex-shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        className="shrink-0 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                         title="Delete this item"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
