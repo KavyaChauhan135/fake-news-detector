@@ -14,6 +14,10 @@ export async function POST(request) {
     // If URL is provided, fetch the content
     if (url) {
       try {
+        // Extract domain for credibility check
+        const urlObj = new URL(url);
+        const domain = urlObj.hostname;
+
         const urlResponse = await fetch(url, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -29,15 +33,27 @@ export async function POST(request) {
 
         const html = await urlResponse.text();
         
-        // Extract text content from HTML (basic extraction)
-        const textContent = html
+        // Extract title
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+
+        // Extract meta description
+        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+        const description = descMatch ? descMatch[1].trim() : '';
+
+        // Better content extraction - focus on article/main content
+        let textContent = html
           .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
           .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+          .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
+          .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
+          .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
           .replace(/<[^>]+>/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
         
-        contentToAnalyze = textContent.substring(0, 3000); // Limit to first 3000 chars
+        // Combine title, description, and content
+        contentToAnalyze = `Source: ${domain}\nTitle: ${title}\n\n${description}\n\n${textContent.substring(0, 2500)}`;
       } catch (urlError) {
         console.error("Error fetching URL:", urlError);
         return Response.json(
@@ -66,11 +82,12 @@ export async function POST(request) {
         messages: [
           {
             role: "system",
-            content: `You are an expert fake news detection system. Analyze the provided content (headline or article) and determine if it's likely fake news, real news, or uncertain.
+            content: `You are an expert fake news detection system. Analyze the provided content and determine if it's likely fake news, real news, or uncertain.
 
-For headlines alone: Look for red flags like sensationalism, clickbait patterns, emotional manipulation, implausible claims, and lack of credible source indicators. Be decisive - only mark as "Uncertain" if truly ambiguous.
+IMPORTANT: Consider the source domain when provided. Established news organizations (BBC, Reuters, AP, CNN, Times of India, The Guardian, etc.) are generally credible unless the content itself shows clear manipulation.
 
-For full articles: Analyze writing quality, source citations, factual consistency, bias, and credibility indicators.
+For URL-based analysis: Consider both the source domain reputation AND the content quality.
+For manual input: Focus on content analysis only.
 
 Respond ONLY with valid JSON in this exact format:
 {
@@ -80,6 +97,7 @@ Respond ONLY with valid JSON in this exact format:
 }
 
 Key indicators of FAKE news:
+- Unknown or suspicious source domains
 - Sensational/clickbait language ("SHOCKING", "You won't believe")
 - Emotional manipulation and fear-mongering
 - Implausible or extraordinary claims without evidence
@@ -89,12 +107,14 @@ Key indicators of FAKE news:
 - Extreme bias or one-sided narrative
 
 Key indicators of REAL news:
+- Established, reputable news organization
 - Professional, neutral tone
 - Credible source attribution
 - Balanced perspective
 - Verifiable facts and data
 - Proper grammar and structure
 - Reasonable, plausible claims
+- Multiple sources cited
 
 Only use "Uncertain" when the content is genuinely ambiguous or needs more context to determine credibility.`,
           },
